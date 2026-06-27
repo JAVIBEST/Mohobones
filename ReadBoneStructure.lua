@@ -209,12 +209,12 @@ function ShowMainMenu()
   print("║     GESTOR DE HUESOS - MOHO PRO 14    ║")
   print("╚════════════════════════════════════════╝\n")
   
+  print("SCRIPT EJECUTADO CORRECTAMENTE")
+  print("")
   print("1. Ver estructura actual de huesos")
   print("2. Crear nueva estructura (5 huesos + 3 pines)")
   print("3. Exportar estructura en JSON")
   print("4. Salir\n")
-  
-  print("Selecciona una opción:")
 end
 
 -- ============================================
@@ -224,14 +224,13 @@ end
 function Main()
   -- Verificar que hay un documento abierto
   if not doc or not doc.currentLayer then
-    MOHO:ShowAlert("Error", "Por favor, abre un proyecto Moho primero")
+    print("ERROR: Por favor, abre un proyecto Moho primero")
     return
   end
   
   ShowMainMenu()
   
-  -- Aquí iría la lógica interactiva si lo necesitas
-  -- Por ahora, ejecutaremos automáticamente
+  print("Ejecutando automáticamente...\n")
   
   PrintCurrentBoneStructure()
   
@@ -239,6 +238,8 @@ function Main()
     PrintCurrentBoneStructure()
     ExportBoneStructureJSON()
   end
+  
+  print("PROCESO COMPLETADO")
 end
 
 -- Ejecutar
