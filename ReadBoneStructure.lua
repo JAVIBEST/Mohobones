@@ -28,13 +28,14 @@ local BoneStructure = {
 -- ============================================
 
 function GetBoneIndexByName(layer, boneName)
-  if not layer or not layer:BoneCount() then
+  if not layer then
     return nil
   end
   
-  for i = 0, layer:BoneCount() - 1 do
+  local boneCount = layer:BoneCount()
+  for i = 0, boneCount - 1 do
     local bone = layer:Bone(i)
-    if bone.name == boneName then
+    if bone and bone.name == boneName then
       return i
     end
   end
@@ -49,7 +50,15 @@ end
 function PrintCurrentBoneStructure()
   print("\n========== ESTRUCTURA ACTUAL DE HUESOS ==========")
   
-  local layer = moho.layer
+  -- Obtener documento y capa activa
+  local document = GetProject().document
+  
+  if not document then
+    print("ERROR: No hay documento abierto")
+    return
+  end
+  
+  local layer = document.layer
   
   if not layer then
     print("ERROR: No hay capa seleccionada")
@@ -68,15 +77,19 @@ function PrintCurrentBoneStructure()
   
   for i = 0, boneCount - 1 do
     local bone = layer:Bone(i)
-    local parentIndex = bone.parent
-    local parentName = "NINGUNO (Raíz)"
-    
-    if parentIndex >= 0 and parentIndex < boneCount then
-      local parentBone = layer:Bone(parentIndex)
-      parentName = parentBone.name
+    if bone then
+      local parentIndex = bone.parent
+      local parentName = "NINGUNO (Raíz)"
+      
+      if parentIndex >= 0 and parentIndex < boneCount then
+        local parentBone = layer:Bone(parentIndex)
+        if parentBone then
+          parentName = parentBone.name
+        end
+      end
+      
+      print(string.format("  [%d] %s (Padre: %s)", i, bone.name, parentName))
     end
-    
-    print(string.format("  [%d] %s (Padre: %s)", i, bone.name, parentName))
   end
   
   print("================================================\n")
@@ -93,7 +106,7 @@ function CreateBone(layer, boneName, parentIndex)
   end
   
   -- Crear nuevo hueso
-  local newBone = MOHO:GetBone()
+  local newBone = GetProject():GetBone()
   newBone.name = boneName
   newBone.parent = parentIndex or -1
   
@@ -113,7 +126,14 @@ end
 function CreateBoneHierarchy()
   print("\n========== CREANDO ESTRUCTURA DE HUESOS ==========\n")
   
-  local layer = moho.layer
+  local document = GetProject().document
+  
+  if not document then
+    print("ERROR: No hay documento abierto")
+    return false
+  end
+  
+  local layer = document.layer
   
   if not layer then
     print("ERROR: No hay capa seleccionada")
@@ -164,7 +184,14 @@ end
 function ExportBoneStructureJSON()
   print("\n========== EXPORTANDO ESTRUCTURA ==========\n")
   
-  local layer = moho.layer
+  local document = GetProject().document
+  
+  if not document then
+    print("ERROR: No hay documento abierto")
+    return
+  end
+  
+  local layer = document.layer
   
   if not layer then
     print("ERROR: No hay capa seleccionada")
@@ -176,22 +203,26 @@ function ExportBoneStructureJSON()
   
   for i = 0, boneCount - 1 do
     local bone = layer:Bone(i)
-    local parentName = "null"
-    
-    if bone.parent >= 0 and bone.parent < boneCount then
-      local parentBone = layer:Bone(bone.parent)
-      parentName = "\"" .. parentBone.name .. "\""
-    end
-    
-    jsonContent = jsonContent .. string.format(
-      "    {\"index\": %d, \"name\": \"%s\", \"parent\": %s}",
-      i, bone.name, parentName
-    )
-    
-    if i < boneCount - 1 then
-      jsonContent = jsonContent .. ",\n"
-    else
-      jsonContent = jsonContent .. "\n"
+    if bone then
+      local parentName = "null"
+      
+      if bone.parent >= 0 and bone.parent < boneCount then
+        local parentBone = layer:Bone(bone.parent)
+        if parentBone then
+          parentName = "\"" .. parentBone.name .. "\""
+        end
+      end
+      
+      jsonContent = jsonContent .. string.format(
+        "    {\"index\": %d, \"name\": \"%s\", \"parent\": %s}",
+        i, bone.name, parentName
+      )
+      
+      if i < boneCount - 1 then
+        jsonContent = jsonContent .. ",\n"
+      else
+        jsonContent = jsonContent .. "\n"
+      end
     end
   end
   
