@@ -4,9 +4,6 @@
 -- Descripción: Lee huesos existentes, crea nuevos huesos en estructura jerárquica
 -- con 5 huesos centrales y 3 huesos de alfiler, y establece relaciones
 
-local moho = MOHO
-local doc = moho.document
-
 -- ============================================
 -- TABLA DE ESTRUCTURA DE HUESOS
 -- ============================================
@@ -31,12 +28,12 @@ local BoneStructure = {
 -- ============================================
 
 function GetBoneIndexByName(layer, boneName)
-  if not layer or not layer.bones then
+  if not layer or not layer:BoneCount() then
     return nil
   end
   
-  for i = 0, layer.bones:Count() - 1 do
-    local bone = layer.bones:Item(i)
+  for i = 0, layer:BoneCount() - 1 do
+    local bone = layer:Bone(i)
     if bone.name == boneName then
       return i
     end
@@ -52,28 +49,30 @@ end
 function PrintCurrentBoneStructure()
   print("\n========== ESTRUCTURA ACTUAL DE HUESOS ==========")
   
-  if not doc or not doc.currentLayer then
-    print("ERROR: No hay capa activa")
+  local layer = moho.layer
+  
+  if not layer then
+    print("ERROR: No hay capa seleccionada")
     return
   end
   
-  local layer = doc.currentLayer
+  local boneCount = layer:BoneCount()
   
-  if not layer.bones or layer.bones:Count() == 0 then
+  if boneCount == 0 then
     print("No hay huesos en la capa actual")
     return
   end
   
-  print("Total de huesos: " .. layer.bones:Count())
+  print("Total de huesos: " .. boneCount)
   print("")
   
-  for i = 0, layer.bones:Count() - 1 do
-    local bone = layer.bones:Item(i)
+  for i = 0, boneCount - 1 do
+    local bone = layer:Bone(i)
     local parentIndex = bone.parent
     local parentName = "NINGUNO (Raíz)"
     
-    if parentIndex >= 0 and parentIndex < layer.bones:Count() then
-      local parentBone = layer.bones:Item(parentIndex)
+    if parentIndex >= 0 and parentIndex < boneCount then
+      local parentBone = layer:Bone(parentIndex)
       parentName = parentBone.name
     end
     
@@ -88,7 +87,7 @@ end
 -- ============================================
 
 function CreateBone(layer, boneName, parentIndex)
-  if not layer or not layer.bones then
+  if not layer then
     print("ERROR: Capa inválida")
     return nil
   end
@@ -99,11 +98,12 @@ function CreateBone(layer, boneName, parentIndex)
   newBone.parent = parentIndex or -1
   
   -- Agregar a la capa
-  layer.bones:InsertBone(layer.bones:Count(), newBone)
+  local boneCount = layer:BoneCount()
+  layer:InsertBone(boneCount, newBone)
   
   print("✓ Hueso creado: " .. boneName .. " (Padre: " .. (parentIndex or -1) .. ")")
   
-  return layer.bones:Count() - 1
+  return boneCount
 end
 
 -- ============================================
@@ -113,9 +113,10 @@ end
 function CreateBoneHierarchy()
   print("\n========== CREANDO ESTRUCTURA DE HUESOS ==========\n")
   
-  local layer = doc.currentLayer
-  if not layer or not layer.bones then
-    print("ERROR: No hay capa activa")
+  local layer = moho.layer
+  
+  if not layer then
+    print("ERROR: No hay capa seleccionada")
     return false
   end
   
@@ -163,20 +164,22 @@ end
 function ExportBoneStructureJSON()
   print("\n========== EXPORTANDO ESTRUCTURA ==========\n")
   
-  local layer = doc.currentLayer
-  if not layer or not layer.bones then
-    print("ERROR: No hay capa activa")
+  local layer = moho.layer
+  
+  if not layer then
+    print("ERROR: No hay capa seleccionada")
     return
   end
   
+  local boneCount = layer:BoneCount()
   local jsonContent = "{\n  \"bones\": [\n"
   
-  for i = 0, layer.bones:Count() - 1 do
-    local bone = layer.bones:Item(i)
+  for i = 0, boneCount - 1 do
+    local bone = layer:Bone(i)
     local parentName = "null"
     
-    if bone.parent >= 0 and bone.parent < layer.bones:Count() then
-      local parentBone = layer.bones:Item(bone.parent)
+    if bone.parent >= 0 and bone.parent < boneCount then
+      local parentBone = layer:Bone(bone.parent)
       parentName = "\"" .. parentBone.name .. "\""
     end
     
@@ -185,7 +188,7 @@ function ExportBoneStructureJSON()
       i, bone.name, parentName
     )
     
-    if i < layer.bones:Count() - 1 then
+    if i < boneCount - 1 then
       jsonContent = jsonContent .. ",\n"
     else
       jsonContent = jsonContent .. "\n"
@@ -211,10 +214,6 @@ function ShowMainMenu()
   
   print("SCRIPT EJECUTADO CORRECTAMENTE")
   print("")
-  print("1. Ver estructura actual de huesos")
-  print("2. Crear nueva estructura (5 huesos + 3 pines)")
-  print("3. Exportar estructura en JSON")
-  print("4. Salir\n")
 end
 
 -- ============================================
@@ -222,12 +221,6 @@ end
 -- ============================================
 
 function Main()
-  -- Verificar que hay un documento abierto
-  if not doc or not doc.currentLayer then
-    print("ERROR: Por favor, abre un proyecto Moho primero")
-    return
-  end
-  
   ShowMainMenu()
   
   print("Ejecutando automáticamente...\n")
@@ -239,7 +232,7 @@ function Main()
     ExportBoneStructureJSON()
   end
   
-  print("PROCESO COMPLETADO")
+  print("\nPROCESO COMPLETADO")
 end
 
 -- Ejecutar
